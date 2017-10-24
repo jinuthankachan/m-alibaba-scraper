@@ -40,23 +40,24 @@ def scrape_pdp(url, w, keys):
 
     # PDP page details #
     #==================#
-
     # image list #
     image_list = []
-    img_bundle_list = soup.find('ul', class_='image-wrap sized').find_all('li')
-    image_list.append(img_bundle_list[0].find('img', class_ ='normal').get('src')[2:].encode('utf-8'))
-    for img_bundle in img_bundle_list[1:]:
-        img = img_bundle.find('img', class_ ='normal').get('data-src')
-        image_list.append(img[2:].encode('utf-8'))
+    img_bundle_list = soup.find('ul', class_='image-wrap sized').find_all('li') or []
+    if len(img_bundle_list):
+        image_list.append(img_bundle_list[0].find('img', class_ ='normal').get('src')[2:].encode('utf-8'))
+        for img_bundle in img_bundle_list[1:]:
+            img = img_bundle.find('img', class_ ='normal').get('data-src')
+            image_list.append(img[2:].encode('utf-8'))
     record['image list'] = image_list
 
     # Title #
-    title_ = soup.find('h1', class_='title')
+    title_ = soup.find('h1', class_='title') or ""
     record['title'] = " ".join(title_.text.split())
 
     # MOQ #
-    moq_ = soup.find('div', class_='min-order')
-    record['moq'] = " ".join(" ".join(item.split()) for item in moq_.find_all(text=True) if item.parent.name != "span")
+    moq_ = soup.find('div', class_='min-order') or ""
+    if len(moq_):
+        record['moq'] = " ".join(" ".join(item.split()) for item in moq_.find_all(text=True) if item.parent.name != "span")
 
     # Detail-Product #
     currency = soup.find('span', {"itemprop" : "priceCurrency"})
@@ -69,18 +70,18 @@ def scrape_pdp(url, w, keys):
     record['unit'] = unit.text if unit is not None else ""
 
     # Supplier details #
-    record['supplier name'] = soup.find('ai-knock-dialog').get('supplier-name')
-    record['supplier company'] = soup.find('ai-knock-dialog').get('supplier-company')
-    record['supplier url'] = soup.find('a', {'data-domdot':'id:26234'}).get('href')
+    record['supplier name'] = soup.find('ai-knock-dialog').get('supplier-name') or ""
+    record['supplier company'] = soup.find('ai-knock-dialog').get('supplier-company') or ""
+    record['supplier url'] = soup.find('a', {'data-domdot':'id:26234'}).get('href') or ""
 
     # Item details #
     item_details = {}
     section = soup.find('section', id='item-details')
     table_body = section.find('tbody')
     try:
-        rows = table_body.find_all('tr')
+        rows = table_body.find_all('tr') or []
         for row in rows:
-            th = row.find('th').text[:-1]
+            th = row.find('th').text[:-1] or ""
             if th not in record.keys():
                 continue
             td = row.find('td').text
@@ -92,19 +93,21 @@ def scrape_pdp(url, w, keys):
     w.writerow(record)
 ###################################################################
 
-#  main() #
-searchTerm = "hemp_seed"
-pageNo = "1"
-file_name = searchTerm + "_" + pageNo + ".csv"
+#  main #
+search_input =  raw_input('Enter search term:\n')
+page_input = raw_input('Enter page number:\n')
+search_term = "_".join(search_input.split())
+page = page_input.replace(" ", "")
+file_name = search_term + "_" + page + ".csv"
+
+url = "https://m.alibaba.com/products/" + search_term + "/" + page + ".html"
+print "Searching: ", url
+res = requests.get(url)
+soup = BeautifulSoup(res.text, 'html.parser')
 
 f = open(file_name, 'wb')
 w = csv.DictWriter(f, keys)
 w.writeheader()
-
-url = "https://m.alibaba.com/products/" + searchTerm + "/" + pageNo + ".html"
-print "Searching: ", url
-res = requests.get(url)
-soup = BeautifulSoup(res.text, 'html.parser')
 
 urls = soup.find_all('a', class_='product-detail', href=True)
 for i, url in enumerate(urls):
