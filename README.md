@@ -1,4 +1,5 @@
 # Alibaba mobile site scraper
+Scrapes details of the products with a search term and a page number. Writes the scraped content onto a csv file.
 
 # Prerequisites
 * [python 2.7](https://www.python.org/download/releases/2.7/)
