@@ -1,3 +1,5 @@
+[unmaintained]
+
 # Alibaba mobile site scraper
 Scrapes details of the products with a search term and a page number. Writes the scraped content onto a csv file.
 
